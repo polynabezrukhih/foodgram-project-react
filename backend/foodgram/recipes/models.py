@@ -7,10 +7,10 @@ from users.models import User
 class Tag(models):
     name = models.CharField(
         unique=True, 
-        validators=RegexValidator(r'\w{,200}')
+        validators=[RegexValidator(r'\w{,200}')]
     )
     color = models.CharField(
-        validators=RegexValidator(r'\w{,7}'),
+        validators=[RegexValidator(r'\w{,7}')],
         unique=True
     )
     slug = models.SlugField(unique=True)
@@ -23,9 +23,9 @@ class Tag(models):
 
 
 class Ingredient(models):
-    name = models.CharField(validators=RegexValidator(r'\w{,200}'))
-    measure = models.CharField(validators=RegexValidator(r'\w{,200}'))
-    unit = models.CharField(validators=RegexValidator(r'\w{,200}'))
+    name = models.CharField(validators=[RegexValidator(r'\w{,200}')])
+    measure = models.CharField(validators=[RegexValidator(r'\w{,200}')])
+    unit = models.CharField(validators=[RegexValidator(r'\w{,200}')])
     def __str__(self):
         return self.name
 
@@ -36,7 +36,7 @@ class Recipe(models):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    name = models.CharField(validators=RegexValidator(r'\w{,200}'))
+    name = models.CharField(validators=[RegexValidator(r'\w{,200}')])
     image = models.ImageField(
         'Картинка',
         upload_to='recipes/'
@@ -50,7 +50,7 @@ class Recipe(models):
         Tag,
         related_name='recipes'
     )
-    time = models.PositiveSmallIntegerField(validators=RegexValidator(r'\d\d/\d\d/\d{4}'))
+    time = models.PositiveSmallIntegerField(validators=[RegexValidator(r'\d\d/\d\d/\d{4}')])
 
     class Meta:
         ordering = ('-pub_date',)
@@ -70,7 +70,7 @@ class IngredientToRecipe(models):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    amount = models.PositiveSmallIntegerField(validators=RegexValidator(r'\d{,7}'))
+    amount = models.PositiveSmallIntegerField(validators=[RegexValidator(r'\d{,7}')])
 
 
 class Favorite(models):

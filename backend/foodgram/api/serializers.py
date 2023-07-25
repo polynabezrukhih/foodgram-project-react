@@ -1,11 +1,13 @@
-
-from rest_framework.serializers import ModelSerializer
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserSerializer, UserCreateSerializer, Serializer
-import django.contrib.auth.password_validation as validators
+from rest_framework.serializers import ModelSerializer
+from rest_framework.validators import UniqueTogetherValidator
 from rest_framework.relations import SlugRelatedField
 
 from recipes.models import Recipe, Tag, Ingredient, Basket, Favorite
 from users.models import User
+
+import django.contrib.auth.password_validation as validators
 
 class CustomUserCreateSerializer(UserCreateSerializer):
     class Meta:
@@ -24,7 +26,7 @@ class PasswordSerializer(Serializer):
 class CustomUserSerializer(UserSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name') 
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'is_subscribed') 
 
 
 class TagSerializer(ModelSerializer):
@@ -37,6 +39,13 @@ class IngredientSerializer(ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Ingredient.objects.all(),
+                fields=('name', 'unit'),
+                message=('Такой ингредиент уже есть.')
+            )
+        ]
 
 
 class RecipeSerializer(ModelSerializer):
@@ -45,8 +54,7 @@ class RecipeSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    is_in_favorite = ...
-    is_in_basket = ...
+
     class Meta:
         model = Recipe
         fields = (
@@ -65,3 +73,16 @@ class RecipeSerializer(ModelSerializer):
             "is_in_favorite",
             "is_in_basket",
         )
+    def is_in_favorite(self, obj):
+        if self.context['request'].user.is_authenticated:
+            user = get_object_or_404(
+                User, username=self.context['request'].user)
+            return ...
+        return False
+
+    def is_in_basket(self, obj):
+        if self.context['request'].user.is_authenticated:
+            user = get_object_or_404(
+                User, username=self.context['request'].user)
+            return ...
+        return False
