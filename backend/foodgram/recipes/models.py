@@ -1,12 +1,19 @@
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models
 from users.models import User
 
 
 class Tag(models):
-    name = models.CharField(max_length=settings.MAX_LENGTH, unique=True)
-    color = models.CharField(max_length=settings.COLOR_MAX_LENGTH, unique=True)
-    slug = models.SlugField(unique=True) #валидатор для допустимых символов(буквы,_,цифры) RegexValidator
+    name = models.CharField(
+        unique=True, 
+        validators=RegexValidator(r'\w{,200}')
+    )
+    color = models.CharField(
+        validators=RegexValidator(r'\w{,7}'),
+        unique=True
+    )
+    slug = models.SlugField(unique=True)
 
     class Meta:
         ordering = ('-id',)
@@ -16,8 +23,9 @@ class Tag(models):
 
 
 class Ingredient(models):
-    name = models.CharField(max_length=settings.MAX_LENGTH)
-    measure = models.CharField(max_length=settings.MAX_LENGTH)
+    name = models.CharField(validators=RegexValidator(r'\w{,200}'))
+    measure = models.CharField(validators=RegexValidator(r'\w{,200}'))
+    unit = models.CharField(validators=RegexValidator(r'\w{,200}'))
     def __str__(self):
         return self.name
 
@@ -28,7 +36,7 @@ class Recipe(models):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    name = models.CharField(max_length=settings.MAX_LENGTH)
+    name = models.CharField(validators=RegexValidator(r'\w{,200}'))
     image = models.ImageField(
         'Картинка',
         upload_to='recipes/'
@@ -42,7 +50,7 @@ class Recipe(models):
         Tag,
         related_name='recipes'
     )
-    time = models.PositiveSmallIntegerField() #применить валидаторы
+    time = models.PositiveSmallIntegerField(validators=RegexValidator(r'\d\d/\d\d/\d{4}'))
 
     class Meta:
         ordering = ('-pub_date',)
@@ -62,11 +70,8 @@ class IngredientToRecipe(models):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    amount = models.PositiveSmallIntegerField() #валидатор
+    amount = models.PositiveSmallIntegerField(validators=RegexValidator(r'\d{,7}'))
 
-
-class Unit(models.Model):
-    pass
 
 class Favorite(models):
     user = models.ForeignKey(
