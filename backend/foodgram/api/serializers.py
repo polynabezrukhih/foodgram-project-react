@@ -1,6 +1,7 @@
 
 from rest_framework.serializers import ModelSerializer
-from djoser.serializers import UserSerializer, UserCreateSerializer
+from djoser.serializers import UserSerializer, UserCreateSerializer, Serializer
+import django.contrib.auth.password_validation as validators
 from rest_framework.relations import SlugRelatedField
 
 from recipes.models import Recipe, Tag, Ingredient, Basket, Favorite
@@ -8,12 +9,22 @@ from users.models import User
 
 class CustomUserCreateSerializer(UserCreateSerializer):
     class Meta:
-        fields = ...
+        model = User
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'password',)
+
+        def validate_password(self, password):
+            validators.validate_password(password)
+            return password
+
+
+class PasswordSerializer(Serializer):
+    pass
+    # TODO: итзучить и использовать функции из документации https://django.fun/ru/docs/django/4.1/topics/auth/passwords/
 
 class CustomUserSerializer(UserSerializer):
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name') 
+        fields = ('id', 'email', 'username', 'first_name', 'last_name') 
 
 
 class TagSerializer(ModelSerializer):
