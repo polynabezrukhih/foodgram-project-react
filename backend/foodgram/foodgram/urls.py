@@ -24,12 +24,8 @@ from django.urls import include, path
 # handler500 = 'core.views.server_error'
 
 urlpatterns = [
-    path('', include('recipes.urls', namespace='recipes')),
-    path('auth/', include('users.urls', namespace='users')),
-    path('auth/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls'))
-#     path('about/', include('about.urls', namespace='about')),
+    path('api/', include('api.urls'))
 ]
 
 # if settings.DEBUG:

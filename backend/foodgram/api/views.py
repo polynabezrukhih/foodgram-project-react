@@ -2,8 +2,9 @@ from django.shortcuts import render
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from django.core.exceptions import PermissionDenied
 from rest_framework.decorators import api_view
+from .permissions import IsAuthorOrReadOnlyPermission, ReadOnly
 
-from api.serializers import TagSerializer, IngredientSerializer, RecipeSerializer
+from api.serializers import TagSerializer, IngredientSerializer, ReadRecipeSerializer
 from recipes.models import Recipe, Tag, Ingredient, Basket, Favorite
 from users.models import User
 
@@ -24,7 +25,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 @api_view(['GET','POST','DELETE'])
 class RecipeViewSet(ReadOnlyModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = ReadRecipeSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

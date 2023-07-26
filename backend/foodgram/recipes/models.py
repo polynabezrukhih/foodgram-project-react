@@ -1,16 +1,16 @@
 from django.conf import settings
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator
 from django.db import models
 from users.models import User
 
 
-class Tag(models):
+class Tag(models.Model):
     name = models.CharField(
         unique=True, 
-        validators=[RegexValidator(r'\w{,200}')]
+        validators=[RegexValidator(r'\w{,200}')] #убрать валидаторы :(
     )
     color = models.CharField(
-        validators=[RegexValidator(r'\w{,7}')],
+        validators=[RegexValidator(regex='#(?:[A-Fa-f0-9]{3}){1, 2}$')],
         unique=True
     )
     slug = models.SlugField(unique=True)
@@ -22,15 +22,18 @@ class Tag(models):
         return self.name
 
 
-class Ingredient(models):
-    name = models.CharField(validators=[RegexValidator(r'\w{,200}')])
+class Ingredient(models.Model):
+    name = models.CharField(validators=[RegexValidator(r'\w{,200}')]) #убрать валидаторы :(
     measure = models.CharField(validators=[RegexValidator(r'\w{,200}')])
-    unit = models.CharField(validators=[RegexValidator(r'\w{,200}')])
+    class Meta:
+        ordering = ('-id',)
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты' #добавить остальным классам
     def __str__(self):
         return self.name
 
 
-class Recipe(models):
+class Recipe(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -50,7 +53,7 @@ class Recipe(models):
         Tag,
         related_name='recipes'
     )
-    time = models.PositiveSmallIntegerField(validators=[RegexValidator(r'\d\d/\d\d/\d{4}')])
+    time = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
         ordering = ('-pub_date',)
@@ -59,7 +62,7 @@ class Recipe(models):
         return self.text[:settings.SHOW_RECIPE_TEXT]
 
 
-class IngredientToRecipe(models):
+class IngredientToRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -70,10 +73,10 @@ class IngredientToRecipe(models):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    amount = models.PositiveSmallIntegerField(validators=[RegexValidator(r'\d{,7}')])
+    amount = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
 
 
-class Favorite(models):
+class Favorite(models.Model):
     user = models.ForeignKey(
         User,
         on_delete = models.CASCADE,
@@ -95,7 +98,7 @@ class Favorite(models):
         ]
 
 
-class Basket(models):
+class Basket(models.Model):
     user = models.ForeignKey(
         User,
         on_delete = models.CASCADE,
