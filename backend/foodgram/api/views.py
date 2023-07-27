@@ -17,7 +17,14 @@ from api.serializers import (
     FollowSerializer,
     CreatRecipeSerializer
 )
-from recipes.models import Recipe, Tag, Ingredient, Basket, Favorite
+from recipes.models import (
+    Recipe, 
+    Tag, 
+    Ingredient, 
+    Basket, 
+    Favorite, 
+    IngredientToRecipe
+)
 from users.models import User, Follow
 
 
@@ -50,7 +57,7 @@ class UserViewSet(ModelViewSet):
     def subscriptions(self, request):
         result = self.paginate_queryset(
             User.objects.filter(
-                a=request.user   # написать фильтрациюпо подпискам
+                follower__user=self.request.user
             )
         )
         serializer = FollowSerializer(
@@ -129,19 +136,22 @@ class RecipeViewSet(ModelViewSet):
         return self.delete(request, Basket, pk)
     
     def download_basket(self, request):
+        text = 'Список покупок:'
         user = self.request.user
         filename = f"{user.username}_shopping_list.txt"
-        basket = []
-        basket = [...] # дописать заполнение корзины ингредиентами
-        text = 'Cписок покупок: \n'
-        for ingredients in basket:
+        ingredients = IngredientToRecipe.objects.filter(
+            recipe__basket_list__user=request.user
+        ).values(
+            'ingredient__name', 'ingredient__measure',
+        ).annotate(amount=sum('amount'))
+        for ingredients in ingredients:
             name, measurement_unit, amount = ingredients
             text += f'{name}: {amount} {measurement_unit}\n'
         response = HttpResponse(
-            basket, content_type="text.txt"
+            text, content_type="text.txt"
         )
         response["Content-Disposition"] = f"attachment; filename={filename}"
-        return response
+        return response 
 
 
 # class FavoriteViewSet(ModelViewSet):
