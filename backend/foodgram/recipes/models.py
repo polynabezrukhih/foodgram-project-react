@@ -6,8 +6,8 @@ from users.models import User
 
 class Tag(models.Model):
     name = models.CharField(
-        unique=True, 
-        validators=[RegexValidator(r'\w{,200}')] #убрать валидаторы :(
+        max_lenght=settings.MAX_LENGTH,
+        unique=True
     )
     color = models.CharField(
         validators=[RegexValidator(regex='#(?:[A-Fa-f0-9]{3}){1, 2}$')],
@@ -17,14 +17,16 @@ class Tag(models.Model):
 
     class Meta:
         ordering = ('-id',)
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
 
     def __str__(self):
         return self.name
 
 
 class Ingredient(models.Model):
-    name = models.CharField(validators=[RegexValidator(r'\w{,200}')]) #убрать валидаторы :(
-    measure = models.CharField(validators=[RegexValidator(r'\w{,200}')])
+    name = models.CharField( max_lenght=settings.MAX_LENGTH,)
+    measure = models.CharField( max_lenght=settings.MAX_LENGTH,)
     class Meta:
         ordering = ('-id',)
         verbose_name = 'Ингредиент'
@@ -39,7 +41,7 @@ class Recipe(models.Model):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    name = models.CharField(validators=[RegexValidator(r'\w{,200}')])
+    name = models.CharField(max_lenght=settings.MAX_LENGTH,)
     image = models.ImageField(
         'Картинка',
         upload_to='recipes/'
@@ -57,6 +59,8 @@ class Recipe(models.Model):
 
     class Meta:
         ordering = ('-pub_date',)
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
 
     def __str__(self):
         return self.text[:settings.SHOW_RECIPE_TEXT]
@@ -96,6 +100,7 @@ class Favorite(models.Model):
                 name='unique_favorites_for_recipes'
             ),
         ]
+        verbose_name = 'Избранное'
 
 
 class Basket(models.Model):
@@ -118,3 +123,4 @@ class Basket(models.Model):
                 name='unique_baskets_for_recipes'
             ),
         ]
+        verbose_name = 'Корзина покупок'
