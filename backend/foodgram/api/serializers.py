@@ -1,6 +1,14 @@
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserSerializer, UserCreateSerializer, Serializer, SerializerMethodField
-from rest_framework.serializers import ModelSerializer, ValidationError, CurrentUserDefault, PrimaryKeyRelatedField, ReadOnlyField
+from djoser.serializers import UserSerializer, UserCreateSerializer
+from rest_framework.serializers import (
+    ModelSerializer, 
+    ValidationError, 
+    CurrentUserDefault, 
+    PrimaryKeyRelatedField, 
+    ReadOnlyField, 
+    Serializer, 
+    SerializerMethodField
+)
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework.relations import SlugRelatedField
 from drf_extra_fields.fields import Base64ImageField

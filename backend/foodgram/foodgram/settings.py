@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'djoser',
     'api',
     'users',
@@ -136,5 +137,4 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MAX_LENGTH = 200
-COLOR_MAX_LENGTH = 7
 SHOW_RECIPE_TEXT = 15

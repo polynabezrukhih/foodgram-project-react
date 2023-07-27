@@ -6,7 +6,7 @@ from users.models import User
 
 class Tag(models.Model):
     name = models.CharField(
-        max_lenght=settings.MAX_LENGTH,
+        max_length=settings.MAX_LENGTH,
         unique=True
     )
     color = models.CharField(
@@ -25,8 +25,8 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField( max_lenght=settings.MAX_LENGTH,)
-    measure = models.CharField( max_lenght=settings.MAX_LENGTH,)
+    name = models.CharField(max_length=settings.MAX_LENGTH,)
+    measure = models.CharField(max_length=settings.MAX_LENGTH,)
     class Meta:
         ordering = ('-id',)
         verbose_name = 'Ингредиент'
@@ -41,7 +41,7 @@ class Recipe(models.Model):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    name = models.CharField(max_lenght=settings.MAX_LENGTH,)
+    name = models.CharField(max_length=settings.MAX_LENGTH,)
     image = models.ImageField(
         'Картинка',
         upload_to='recipes/'

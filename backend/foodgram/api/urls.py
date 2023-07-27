@@ -6,8 +6,6 @@ from api.views import (
     IngredientViewSet,
     UserViewSet,
     RecipeViewSet,
-    FavoriteViewSet,
-    BasketViewSet
 )
 
 
@@ -17,10 +15,10 @@ router.register("tags", TagViewSet, "tags")
 router.register("ingredients", IngredientViewSet, "ingredients")
 router.register("recipes", RecipeViewSet, "recipes")
 router.register("users", UserViewSet, "users")
-router.register('favorites', FavoriteViewSet, basename='favorite')
-router.register('baskets', BasketViewSet, basename='basket')
+
 
 urlpatterns = [
-    path("v1/", include(router.urls)),
-    path("auth/", include("djoser.urls.authtoken"))
+    path('v1/', include(router.urls)),
+    path('', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
 ]
