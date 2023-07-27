@@ -17,10 +17,25 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         model = User
         fields = ('id', 'email', 'username',
                   'first_name', 'last_name', 'password',)
+        # fields = tuple(User.REQUIRED_FIELDS) + (
+        #     User.USERNAME_FIELD,
+        #     'password',
+        # )
 
     def validate_password(self, password):
         validators.validate_password(password)
         return password
+
+    def create(self, validated_data):
+        user = User(
+            email=validated_data["email"],
+            username=validated_data["username"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+        )
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
 
 
 class PasswordSerializer(Serializer):
@@ -48,6 +63,7 @@ class FollowSerializer(ModelSerializer):
                 message="Уже подписаны",
             )
         ]
+
     def validate(self, data):
         user = self.context["request"].user
         follow_obj = data["following"]
@@ -56,6 +72,7 @@ class FollowSerializer(ModelSerializer):
                 "Невозможно подписаться на самого себя"
             )
         return data
+
     def is_follower(self, obj):
         request = self.context.get('request')
         if request is not None and request.user.is_authenticated:
@@ -72,10 +89,18 @@ class FollowSerializer(ModelSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
+    is_subscribed = SerializerMethodField(read_only=True)
+
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'first_name',
                   'last_name', 'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request is not None and request.user.is_authenticated:
+            return Follow.objects.filter(user=request.user, author=obj.id).exists()
+        return False
 
 
 class TagSerializer(ModelSerializer):
@@ -118,6 +143,7 @@ class RecipeForListSerializer(ModelSerializer):
             'tags',
             "time",
         )
+
 
 class ReadRecipeSerializer(ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
@@ -163,18 +189,21 @@ class ReadRecipeSerializer(ModelSerializer):
 
 class CreatRecipeSerializer(ModelSerializer):
     tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all)
+    author = CustomUserSerializer(read_only=True)
+    ingredients = IngredientToRecipeSerializer(many=True)
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
         fields = (
             'id',
             'author',
-            "name",
-            "image",
-            "text",
+            'name',
+            'image',
+            'text',
             'ingredients',
             'tags',
-            "time"
+            'time'
         )
 
     def velidate(self, data):
@@ -188,56 +217,49 @@ class CreatRecipeSerializer(ModelSerializer):
 
         data.update(
             {
-                "tags": tags,
-                "ingredients": ingredients,
-                "author": self.context.get("request").user,
+                'tags': tags,
+                'ingredients': ingredients,
+                'author': self.context.get('request').user,
             }
         )
         return data
 
-    def create(self, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        tags = self.initial_data.get('tags')
-        recipe = Recipe.objects.create(author=CurrentUserDefault()(self), **validated_data)
-        recipe.tags.set(tags)
-        for ingredient in ingredients:
-            id = ingredient.get('id')
-            amount = ingredient.get('amount')
-            ingredient_recipe, created = (
-                IngredientToRecipe.objects.get_or_create(
-                    recipe=recipe,
-                    id=id,
-                    defaults={'amount': amount}
-                )
-            )
-            if not created:
-                ingredient_recipe.amount = amount
-                ingredient_recipe.save()
-        return recipe
-
-
     def create_ingredients(self, ingredients, recipe):
         for ingredient in ingredients:
-            amount = ingredient['amount']
             if IngredientToRecipe.objects.filter(
                 recipe=recipe,
                 ingredients=get_object_or_404(Ingredient, id=ingredient['id']),
             ).exists():
-                IngredientToRecipe.objects.update_or_create(
-                    recipe=recipe,
-                    ingredients=get_object_or_404(Ingredient, id=ingredient['id']),
-                    defaults={"amount": amount},
+                IngredientToRecipe.objects.bulk_create(
+                    IngredientToRecipe(
+                        ingredient=Ingredient.objects.get(id=ingredient['id']),
+                        recipe=recipe,
+                        amount=ingredient['amount']
+                    )
                 )
 
+    def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        tags = self.initial_data.get('tags')
+        recipe = Recipe.objects.create(
+            author=CurrentUserDefault()(self), **validated_data)
+        recipe.tags.set(tags)
+        self.create_ingredients(recipe=recipe, ingredients=ingredients)
+        return recipe
+
     def update(self, instance, validated_data):
-        instance.ingredients = validated_data.get("ingredients")
-        instance.tags = validated_data.get("tags")
+        instance.ingredients.clear()
+        ingredients = validated_data.pop('ingredients')
+        self.create_ingredients(recipe=instance, ingredients=ingredients)
+        tags = validated_data.pop('tags')
+        instance.tags.clear()
+        instance.tags.set(tags)
         instance.save()
         return instance
-    
-    def to_representation(self, recipe):
+
+    def to_representation(self, instance):
         data = ReadRecipeSerializer(
-            recipe, context={"request": self.context.get("request")}
+            instance, context={"request": self.context.get("request")}
         ).data
         return data
 
@@ -254,8 +276,12 @@ class ReadBasketSerializer(ModelSerializer):
                 'Рецепт уже добавлен в избранное.'
             )
         return attrs
+
     def update(self, instance, validated_data):
-        instance.recipes = validated_data.get('recipes')
+        instance.instance.tags.set(recipes).clear()
+        recipes = validated_data.pop('recipes')
+        instance.recipes.set(recipes)
+        instance.save()
         return instance
 
 
@@ -273,5 +299,8 @@ class ReadFavoriteSerializer(ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        instance.recipes = validated_data.get('recipes')
+        instance.instance.tags.set(recipes).clear()
+        recipes = validated_data.pop('recipes')
+        instance.recipes.set(recipes)
+        instance.save()
         return instance
