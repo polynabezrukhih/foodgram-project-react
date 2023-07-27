@@ -222,20 +222,18 @@ class CreatRecipeSerializer(ModelSerializer):
             if IngredientToRecipe.objects.filter(
                 recipe=recipe,
                 ingredients=get_object_or_404(Ingredient, id=ingredient['id']),
-            ).exists()
-            IngredientToRecipe.objects.update_or_create(
-                recipe=recipe,
-                ingredients=get_object_or_404(Ingredient, id=ingredient['id']),
-                defaults={"amount": amount},
-            )
+            ).exists():
+                IngredientToRecipe.objects.update_or_create(
+                    recipe=recipe,
+                    ingredients=get_object_or_404(Ingredient, id=ingredient['id']),
+                    defaults={"amount": amount},
+                )
 
-    def update(self, recipe, validated_data):
-        ingredients = validated_data.pop("ingredients")
-        tags = validated_data.pop("tags")
-        IngredientToRecipe.objects.filter(recipe=recipe).delete()
-        self.create_ingredients(ingredients, recipe)
-        recipe.tags.set(tags)
-        return super().update(recipe, validated_data)
+    def update(self, instance, validated_data):
+        instance.ingredients = validated_data.get("ingredients")
+        instance.tags = validated_data.get("tags")
+        instance.save()
+        return instance
     
     def to_representation(self, recipe):
         data = ReadRecipeSerializer(
@@ -256,9 +254,9 @@ class ReadBasketSerializer(ModelSerializer):
                 'Рецепт уже добавлен в избранное.'
             )
         return attrs
-    def update(self, basket_list, validated_data):
-        basket_list = validated_data.pop('recipes')
-        return super().update(basket_list, validated_data)
+    def update(self, instance, validated_data):
+        instance.recipes = validated_data.get('recipes')
+        return instance
 
 
 class ReadFavoriteSerializer(ModelSerializer):
@@ -275,6 +273,5 @@ class ReadFavoriteSerializer(ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        favorite_list = validated_data.pop('recipes')
-        return super().update(favorite_list, validated_data)
-
+        instance.recipes = validated_data.get('recipes')
+        return instance
