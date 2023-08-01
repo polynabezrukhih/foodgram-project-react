@@ -6,7 +6,9 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.http.response import HttpResponse
-from .permissions import IsAuthorOrReadOnlyPermission
+from api.permissions import IsAuthorOrReadOnlyPermission
+from djoser.views import UserViewSet
+from rest_framework.permissions import IsAuthenticated
 
 from api.serializers import (
     TagSerializer,
@@ -26,11 +28,15 @@ from recipes.models import (
     IngredientToRecipe
 )
 from users.models import User, Follow
+from api.paginator import Pagntr
 
+# class TokenCreateView():
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = FollowSerializer
+    permission_classes = (IsAuthenticated,)
+    pagination_class = Pagntr
 
     def subscribe(self, request, pk):
         user = request.user
@@ -104,7 +110,7 @@ class RecipeViewSet(ModelViewSet):
     def post(self, request, serializer, pk):
         data = {
             'user': request.user.id,
-            'recipe': pk,
+            'recipes': pk,
         }
         serializer = serializer(
             data=data,
@@ -152,14 +158,3 @@ class RecipeViewSet(ModelViewSet):
         )
         response["Content-Disposition"] = f"attachment; filename={filename}"
         return response 
-
-
-# class FavoriteViewSet(ModelViewSet):
-#     queryset = Recipe.objects.all()
-#     serializer_class = ReadBasketSerializer
-
-
-# class BasketViewSet(ModelViewSet):
-#     queryset = Recipe.objects.all()
-#     serializer_class = ReadFavoriteSerializer
-

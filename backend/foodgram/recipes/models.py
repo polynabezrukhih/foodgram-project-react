@@ -11,7 +11,8 @@ class Tag(models.Model):
     )
     color = models.CharField(
         validators=[RegexValidator(regex='#(?:[A-Fa-f0-9]{3}){1, 2}$')],
-        unique=True
+        unique=True,
+        max_length=settings.COLOR_MAX_LENGTH,
     )
     slug = models.SlugField(unique=True)
 
@@ -30,7 +31,7 @@ class Ingredient(models.Model):
     class Meta:
         ordering = ('-id',)
         verbose_name = 'Ингредиент'
-        verbose_name_plural = 'Ингредиенты' #добавить остальным классам
+        verbose_name_plural = 'Ингредиенты'
     def __str__(self):
         return self.name
 
@@ -55,8 +56,11 @@ class Recipe(models.Model):
         Tag,
         related_name='recipes'
     )
-    time = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
-
+    cooking_time = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
+    pub_date = models.DateTimeField(
+        'Дата создания',
+        auto_now_add=True
+    )
     class Meta:
         ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
@@ -70,12 +74,12 @@ class IngredientToRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredients'
+        related_name='recipe_ingredients'
     )
     ingredients = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='recipes'
+        related_name='ingredient'
     )
     amount = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
 
@@ -96,7 +100,7 @@ class Favorite(models.Model):
         ordering = ('-id',)
         constraints = [
             models.UniqueConstraint(
-                fields=('recipe', 'user',),
+                fields=('recipes', 'user',),
                 name='unique_favorites_for_recipes'
             ),
         ]
@@ -119,7 +123,7 @@ class Basket(models.Model):
         ordering = ('-id',)
         constraints = [
             models.UniqueConstraint(
-                fields=('recipe', 'user',),
+                fields=('recipes', 'user',),
                 name='unique_baskets_for_recipes'
             ),
         ]
