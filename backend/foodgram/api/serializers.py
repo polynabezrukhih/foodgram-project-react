@@ -6,7 +6,6 @@ from rest_framework.serializers import (
     CurrentUserDefault,
     PrimaryKeyRelatedField,
     ReadOnlyField,
-    Serializer,
     SerializerMethodField,
     IntegerField
 )
@@ -14,10 +13,15 @@ from rest_framework.validators import UniqueTogetherValidator
 from rest_framework.relations import SlugRelatedField
 from drf_extra_fields.fields import Base64ImageField
 
-from recipes.models import Recipe, Tag, Ingredient, Basket, Favorite, IngredientInRecipe
+from recipes.models import (
+    Recipe,
+    Tag,
+    Ingredient,
+    Basket,
+    Favorite,
+    IngredientInRecipe
+)
 from users.models import User, Follow
-
-import django.contrib.auth.password_validation as validators
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):

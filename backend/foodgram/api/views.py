@@ -1,9 +1,8 @@
-from django.shortcuts import render
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework import status
+# from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.http.response import HttpResponse
 from api.permissions import IsAuthorOrReadOnlyPermission
@@ -14,8 +13,6 @@ from api.serializers import (
     TagSerializer,
     IngredientSerializer,
     ReadRecipeSerializer,
-    ReadFavoriteSerializer,
-    ReadBasketSerializer,
     FollowSerializer,
     CreatRecipeSerializer
 )
@@ -23,8 +20,6 @@ from recipes.models import (
     Recipe,
     Tag,
     Ingredient,
-    Basket,
-    Favorite,
     IngredientInRecipe
 )
 from users.models import User, Follow

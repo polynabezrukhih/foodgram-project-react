@@ -56,7 +56,9 @@ class Recipe(models.Model):
         Tag,
         related_name='recipes'
     )
-    cooking_time = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
+    cooking_time = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1)]
+    )
     pub_date = models.DateTimeField(
         'Дата создания',
         auto_now_add=True
@@ -82,7 +84,9 @@ class IngredientInRecipe(models.Model):
         on_delete=models.CASCADE,
         related_name='ingredient'
     )
-    amount = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
+    amount = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1)]
+    )
 
 
 class Favorite(models.Model):
