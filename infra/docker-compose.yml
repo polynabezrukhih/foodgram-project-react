@@ -1,17 +1,51 @@
 version: '3.3'
+
+volumes:
+  pg_data:
+  static_data:
+  media_data:
+
+
 services:
 
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+
+  backend:
+    image: polybezrukhih/food_back:latest
+    restart: always
+    volumes:
+      - static_data:/app/static/
+      - media_data:/app/media/
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+    container_name: food_back
+
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: polybezrukhih/food_front:latest
     volumes:
       - ../frontend/:/app/result_build/
+    depends_on:
+      - db
+    container_name: food_front
+
   nginx:
-    image: nginx:1.19.3
+    image: polybezrukhih/food_infra:latest
+    restart: always
     ports:
-      - "80:80"
+      - "8000:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
+      - static_data:/var/html/static/
+      - media_data:/var/html/media/
+    depends_on:
+      - backend
+    container_name: food_infra

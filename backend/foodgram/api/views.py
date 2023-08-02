@@ -20,19 +20,18 @@ from api.serializers import (
     CreatRecipeSerializer
 )
 from recipes.models import (
-    Recipe, 
-    Tag, 
-    Ingredient, 
-    Basket, 
-    Favorite, 
-    IngredientToRecipe
+    Recipe,
+    Tag,
+    Ingredient,
+    Basket,
+    Favorite,
+    IngredientInRecipe
 )
 from users.models import User, Follow
 from api.paginator import Pagntr
 
-# class TokenCreateView():
 
-class UserViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
@@ -63,7 +62,7 @@ class UserViewSet(UserViewSet):
     def subscriptions(self, request):
         result = self.paginate_queryset(
             User.objects.filter(
-                follower__user=self.request.user
+                follower__user=request.user
             )
         )
         serializer = FollowSerializer(
@@ -72,22 +71,22 @@ class UserViewSet(UserViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
 class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
 
 
-@api_view(['GET', 'POST', 'DELETE', 'PUT', 'PATCH'])
+# @api_view(['GET', 'POST', 'DELETE', 'PUT', 'PATCH'])
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = [IsAuthorOrReadOnlyPermission,]
+    permission_classes = [IsAuthorOrReadOnlyPermission, ]
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
@@ -119,7 +118,7 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     def delete(self, request, model, pk):
         list = get_object_or_404(
             model,
@@ -129,24 +128,12 @@ class RecipeViewSet(ModelViewSet):
         list.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def favorite(self, request, pk=None):
-        return self.post(request, ReadFavoriteSerializer, pk)
-
-    def delete_from_favorite(self, request, pk=None):
-        return self.delete(request, Favorite, pk)
-
-    def basket(self, request, pk=None):
-        return self.post(request, ReadBasketSerializer, pk)
-
-    def delete_from_basket(self, request, pk=None):
-        return self.delete(request, Basket, pk)
-    
-    def download_basket(self, request):
+    def download_shopping_cart(self, request):
         text = 'Список покупок:'
-        user = self.request.user
-        filename = f"{user.username}_shopping_list.txt"
-        ingredients = IngredientToRecipe.objects.filter(
-            recipe__basket_list__user=request.user
+        user = request.user
+        filename = f'{user.username}_shopping_list.txt'
+        ingredients = IngredientInRecipe.objects.filter(
+            recipe__basket_list__user=user
         ).values(
             'ingredient__name', 'ingredient__measure',
         ).annotate(amount=sum('amount'))
@@ -154,7 +141,7 @@ class RecipeViewSet(ModelViewSet):
             name, measurement_unit, amount = ingredients
             text += f'{name}: {amount} {measurement_unit}\n'
         response = HttpResponse(
-            text, content_type="text.txt"
+            text, content_type='text/plain'
         )
-        response["Content-Disposition"] = f"attachment; filename={filename}"
-        return response 
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+        return response

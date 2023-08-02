@@ -1,11 +1,7 @@
 from django.contrib.auth import get_user_model
-
 from django.db import models
 
 User = get_user_model()
-
-# class User(models.Model):
-#     pass #так чтобы необязательно было поле Username
 
 
 class Follow(models.Model):
