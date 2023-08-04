@@ -30,16 +30,16 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         fields = ('id', 'email', 'username',
                   'first_name', 'last_name', 'password',)
 
-    def create(self, validated_data):
-        user = User(
-            email=validated_data['email'],
-            username=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+    # def create(self, validated_data):
+    #     user = User(
+    #         email=validated_data['email'],
+    #         username=validated_data['username'],
+    #         first_name=validated_data['first_name'],
+    #         last_name=validated_data['last_name'],
+    #     )
+    #     user.set_password(validated_data['password'])
+    #     user.save()
+    #     return user
 
 
 class FollowSerializer(ModelSerializer):
@@ -152,11 +152,7 @@ class RecipeForListSerializer(ModelSerializer):
 
 class ReadRecipeSerializer(ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
-    author = SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-        many=False
-    )
+    author = CustomUserSerializer(read_only=True)
     ingredients = IngredientInRecipeSerializer(many=True, source='ingredient')
     is_favorited = SerializerMethodField()
     is_in_shopping_cart = SerializerMethodField()
@@ -179,24 +175,29 @@ class ReadRecipeSerializer(ModelSerializer):
         read_only_fields = (
             'is_favorited',
             'is_in_shopping_cart',
+            'author',
+            'tags',
         )
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
-        if request is not None and request.user.is_authenticated:
+        if request.user.is_authenticated:
             return obj.favorite_list.filter(user=request.user).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
-        if request is not None and request.user.is_authenticated:
+        if request.user.is_authenticated:
             return obj.basket_list.filter(user=request.user).exists()
         return False
+    
+    def get_ingredients(self, obj):
+        Ingredients = IngredientInRecipe.objects.filter(recipe=obj)
+        return IngredientInRecipeSerializer(Ingredients, many=True).data
 
 
 class CreatRecipeSerializer(ModelSerializer):
     tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all)
-    author = CustomUserSerializer(read_only=True)
     ingredients = IngredientInRecipeSerializer(many=True)
     image = Base64ImageField()
     cooking_time = IntegerField()
@@ -205,7 +206,6 @@ class CreatRecipeSerializer(ModelSerializer):
         model = Recipe
         fields = (
             'id',
-            'author',
             'name',
             'image',
             'text',
@@ -232,7 +232,8 @@ class CreatRecipeSerializer(ModelSerializer):
         )
         return data
 
-    def create_ingredients(self, ingredients, recipe):
+    @staticmethod
+    def create_ingredients(ingredients, recipe):
         ingredient_list = []
         for ingredient in ingredients:
             ingredient_list.append(IngredientInRecipe(
@@ -245,8 +246,7 @@ class CreatRecipeSerializer(ModelSerializer):
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        recipe = Recipe.objects.create(
-            author=CurrentUserDefault(), **validated_data)
+        recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         self.create_ingredients(ingredients, recipe)
         return recipe

@@ -2,25 +2,26 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-# from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.http.response import HttpResponse
 from api.permissions import IsAuthorOrReadOnlyPermission
 from djoser.views import UserViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 
 from api.serializers import (
     TagSerializer,
     IngredientSerializer,
     ReadRecipeSerializer,
     FollowSerializer,
-    CreatRecipeSerializer
+    CreatRecipeSerializer,
+    CustomUserSerializer
 )
 from recipes.models import (
     Recipe,
     Tag,
     Ingredient,
-    IngredientInRecipe
+    IngredientInRecipe,
 )
 from users.models import User, Follow
 from api.paginator import Pagntr
@@ -28,10 +29,11 @@ from api.paginator import Pagntr
 
 class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
-    serializer_class = FollowSerializer
+    serializer_class = CustomUserSerializer()
     permission_classes = (IsAuthenticated,)
     pagination_class = Pagntr
 
+    @action(detail=True, methods=('POST',))
     def subscribe(self, request, pk):
         user = request.user
         author = get_object_or_404(User, id=pk)
@@ -45,6 +47,7 @@ class CustomUserViewSet(UserViewSet):
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=('DELETE',))
     def delete_subscribe(self, request, pk):
         user = request.user
         author = get_object_or_404(User, id=pk)
@@ -54,6 +57,7 @@ class CustomUserViewSet(UserViewSet):
         subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=('GET',))
     def subscriptions(self, request):
         result = self.paginate_queryset(
             User.objects.filter(
@@ -66,19 +70,16 @@ class CustomUserViewSet(UserViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-# @api_view(['GET'])
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
-# @api_view(['GET'])
 class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
 
 
-# @api_view(['GET', 'POST', 'DELETE', 'PUT', 'PATCH'])
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthorOrReadOnlyPermission, ]
@@ -90,16 +91,6 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    def perform_update(self, serializer):
-        if serializer.instance.author != self.request.user:
-            raise PermissionDenied('Изменение чужого контента запрещено!')
-        super().perform_update(serializer)
-
-    def perform_destroy(self, serializer):
-        if serializer.author != self.request.user:
-            raise PermissionDenied('Изменение чужого контента запрещено!')
-        super().perform_destroy(serializer)
 
     def post(self, request, serializer, pk):
         data = {
@@ -132,9 +123,8 @@ class RecipeViewSet(ModelViewSet):
         ).values(
             'ingredient__name', 'ingredient__measure',
         ).annotate(amount=sum('amount'))
-        for ingredients in ingredients:
-            name, measurement_unit, amount = ingredients
-            text += f'{name}: {amount} {measurement_unit}\n'
+        text += '\n'.join([f'{name}: {amount} {measurement_unit}'
+                           for name, measurement_unit, amount in ingredients])
         response = HttpResponse(
             text, content_type='text/plain'
         )
