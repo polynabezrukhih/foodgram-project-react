@@ -13,7 +13,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     env_file:
-      - ./.env
+      - .env
 
   backend:
     image: polybezrukhih/food_back:latest
@@ -24,7 +24,7 @@ services:
     depends_on:
       - db
     env_file:
-      - ./.env
+      - .env
     container_name: food_back
 
   frontend:
