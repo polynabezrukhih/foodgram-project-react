@@ -190,7 +190,7 @@ class ReadRecipeSerializer(ModelSerializer):
         if request.user.is_authenticated:
             return obj.basket_list.filter(user=request.user).exists()
         return False
-    
+
     def get_ingredients(self, obj):
         Ingredients = IngredientInRecipe.objects.filter(recipe=obj)
         return IngredientInRecipeSerializer(Ingredients, many=True).data
