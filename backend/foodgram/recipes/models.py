@@ -10,7 +10,9 @@ class Tag(models.Model):
         unique=True
     )
     color = models.CharField(
-        validators=[RegexValidator(regex='#(?:[A-Fa-f0-9]{3}){1, 2}$')],
+        validators=[RegexValidator(
+            regex='^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+        )],
         unique=True,
         max_length=settings.COLOR_MAX_LENGTH,
     )
@@ -25,8 +27,8 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=settings.MAX_LENGTH, )
-    measurement_unit = models.CharField(max_length=settings.MAX_LENGTH, )
+    name = models.CharField(max_length=settings.MAX_LENGTH)
+    measurement_unit = models.CharField(max_length=settings.MAX_LENGTH)
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -79,10 +81,10 @@ class IngredientInRecipe(models.Model):
         on_delete=models.CASCADE,
         related_name='recipe_ingredients'
     )
-    ingredients = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredient'
+        related_name='recipe_ingredients'
     )
     amount = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1)]

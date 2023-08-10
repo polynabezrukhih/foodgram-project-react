@@ -37,7 +37,7 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = (RecipeInIngredientAdmin,)
 
     def favorite_calc(self, obj):
-        return obj.favorite_calc.count()
+        return obj.favorite_list.count()
 
     favorite_calc.short_description = 'Добавлено в избранное'
 
